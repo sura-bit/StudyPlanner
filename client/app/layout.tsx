@@ -1,0 +1,40 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import localFont from "next/font/local";
+import { SidebarDemo } from "@/components/Dashboard";
+
+
+const logoFont = localFont({
+  src: "../public/fonts/Fontspring-DEMO-allroundgothic-thick.otf",
+  variable: "--font-logo-font",
+});
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Queuely",
+  description: "Study Planner: plan your course tasks",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} ${logoFont.variable}`}>
+        <SidebarDemo>{children}</SidebarDemo>
+      </body>
+    </html>
+  );
+}
