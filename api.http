@@ -1,0 +1,47 @@
+### 1. A1 Sign up lee (expect 201, id, username lee, role USER, no password)
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{ "username": "lee", "password": "lee12345" }
+
+### 2. A1 Sign up lee again (expect 409, "username lee is taken")
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{ "username": "lee", "password": "lee12345" }
+
+### 3. A1 Invalid fields (expect 400, two fieldErrors: username and password)
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{ "username": "Lee!", "password": "short" }
+
+### 4. A2 Log in as admin (expect 200, accessToken; kept as adminToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "admin1234" }
+
+> {% client.global.set("adminToken", response.body.accessToken); %}
+
+### 5. A2 Log in as sura (expect 200; kept as suraToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "sura", "password": "sura1234" }
+
+> {% client.global.set("suraToken", response.body.accessToken); %}
+
+### 6. A2 Log in as kenny (expect 200; kept as kennyToken)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "kenny", "password": "kenny1234" }
+
+> {% client.global.set("kennyToken", response.body.accessToken); %}
+
+### 7. A2 Wrong password (expect 401, "wrong username or password")
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "sura", "password": "wrongpass" }
