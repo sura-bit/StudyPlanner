@@ -1,14 +1,16 @@
-### 1. A1 Sign up lee (expect 201, id, username lee, role USER, no password)
+### Auth (A1, A2)
+
+### 1. A1 Sign up shara (expect 201, id, username shara, role USER, no password)
 POST http://localhost:8080/api/auth/signup
 Content-Type: application/json
 
-{ "username": "lee", "password": "lee12345" }
+{ "username": "shara", "password": "shara12345" }
 
-### 2. A1 Sign up lee again (expect 409, "username lee is taken")
+### 2. A1 Sign up shara again (expect 409, "username shara is taken")
 POST http://localhost:8080/api/auth/signup
 Content-Type: application/json
 
-{ "username": "lee", "password": "lee12345" }
+{ "username": "shara", "password": "shara12345" }
 
 ### 3. A1 Invalid fields (expect 400, two fieldErrors: username and password)
 POST http://localhost:8080/api/auth/signup
@@ -45,3 +47,101 @@ POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 { "username": "sura", "password": "wrongpass" }
+
+### Courses (P1–P5)
+
+### 8. P2 All courses, no login (expect 200, 3 courses)
+GET http://localhost:8080/api/courses
+
+### 9. P2 Filter: taskLimit at least 5 (expect 200, 2 courses: DB101, WEB101)
+GET http://localhost:8080/api/courses?minTaskLimit=5
+
+### 10. P2 Filter below 1 (expect 400, "minTaskLimit must be at least 1")
+GET http://localhost:8080/api/courses?minTaskLimit=0
+
+### 11. P2 Filter that is not a number (expect 400, "'minTaskLimit' has the wrong type")
+GET http://localhost:8080/api/courses?minTaskLimit=abc
+
+### 12. P3 One course (expect 200, ASP101)
+GET http://localhost:8080/api/courses/1
+
+### 13. P3 Missing course (expect 404, "course 99 not found")
+GET http://localhost:8080/api/courses/99
+
+### 14. P1 Admin creates a course (expect 201 + Location: /api/courses/4)
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "NET101", "name": "Networks", "taskLimit": 4, "instructor": "Professor Choi", "credits": 3 }
+
+### 15. P1 No token (expect 401, "login required")
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{ "code": "OS101", "name": "Operating Systems", "taskLimit": 4, "instructor": "Professor Han", "credits": 3 }
+
+### 16. P1 Rule D: a user creates a course (expect 403, "admin role required")
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "code": "OS101", "name": "Operating Systems", "taskLimit": 4, "instructor": "Professor Han", "credits": 3 }
+
+### 17. P1 Invalid fields (expect 400, fieldErrors for code, name and taskLimit)
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "x", "name": "", "taskLimit": 0, "instructor": "Professor Han", "credits": 3 }
+
+### 18. P1 Code already used (expect 409, "course code ASP101 is taken")
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "ASP101", "name": "Copy", "taskLimit": 3, "instructor": "Professor Lee", "credits": 3 }
+
+### 19. P4 Admin renames course 4 and keeps its own code (expect 200)
+PUT http://localhost:8080/api/courses/4
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "NET101", "name": "Computer Networks", "taskLimit": 5, "instructor": "Professor Choi", "credits": 3 }
+
+### 20. P4 Code of another course (expect 409, "course code DB101 is taken")
+PUT http://localhost:8080/api/courses/4
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "DB101", "name": "Computer Networks", "taskLimit": 5, "instructor": "Professor Choi", "credits": 3 }
+
+### 21. P4 Missing course (expect 404, "course 99 not found")
+PUT http://localhost:8080/api/courses/99
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "code": "NET102", "name": "Nothing", "taskLimit": 5, "instructor": "Professor Choi", "credits": 3 }
+
+### 22. P4 Rule D: a user changes a course (expect 403, "admin role required")
+PUT http://localhost:8080/api/courses/4
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "code": "NET101", "name": "Sura's Networks", "taskLimit": 20, "instructor": "Professor Choi", "credits": 3 }
+
+### 23. P5 Rule D: a user deletes a course (expect 403, "admin role required")
+DELETE http://localhost:8080/api/courses/4
+Authorization: Bearer {{suraToken}}
+
+### 24. P5 Course that has tasks (expect 409, "course 1 has tasks")
+DELETE http://localhost:8080/api/courses/1
+Authorization: Bearer {{adminToken}}
+
+### 25. P5 Course without tasks (expect 204)
+DELETE http://localhost:8080/api/courses/3
+Authorization: Bearer {{adminToken}}
+
+### 26. P5 Missing course (expect 404, "course 99 not found")
+DELETE http://localhost:8080/api/courses/99
+Authorization: Bearer {{adminToken}}
