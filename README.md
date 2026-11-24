@@ -82,6 +82,25 @@ export JWT_SECRET="put-a-long-random-secret-of-at-least-32-bytes-here"
 The API runs on http://localhost:8080. Swagger UI: http://localhost:8080/swagger-ui.html
 (log in with `POST /api/auth/login`, click **Authorize** and paste the `accessToken`).
 
+### Docker (bonus)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose).
+One command starts MySQL and the API together:
+
+```bash
+docker compose up --build
+```
+
+- API: http://localhost:8080 (Swagger: http://localhost:8080/swagger-ui.html)
+- MySQL inside Compose: host `db`, database `studyplanner`, user `plannerapp` / `plannerapp1234`
+- MySQL on the host machine (optional, e.g. Workbench): `localhost:3307` (mapped so it does not clash with a local MySQL on 3306)
+- First start loads `reset.sql` into a fresh volume (tables + sample accounts)
+
+Stop with `Ctrl+C`, or in another terminal `docker compose down`.  
+To wipe the database volume and reload sample data: `docker compose down -v` then `docker compose up --build` again.
+
+The Next.js client is not in Compose. Run it on the host as usual (`cd client && npm run dev`); it talks to http://localhost:8080.
+
 ### Tests
 
 ```bash

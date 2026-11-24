@@ -1,0 +1,11 @@
+.gradle
+build
+.git
+.idea
+.vscode
+client/node_modules
+client/.next
+*.md
+.env
+**/bin
+**/out
