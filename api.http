@@ -145,3 +145,151 @@ Authorization: Bearer {{adminToken}}
 ### 26. P5 Missing course (expect 404, "course 99 not found")
 DELETE http://localhost:8080/api/courses/99
 Authorization: Bearer {{adminToken}}
+
+### Tasks (C1–C6)
+
+### 27. C2 Tasks of course 1, no login (expect 200, 5 tasks with courseName and ownerUsername)
+GET http://localhost:8080/api/courses/1/tasks
+
+### 28. C2 Missing course (expect 404, "course 99 not found")
+GET http://localhost:8080/api/courses/99/tasks
+
+### 29. C1 kenny adds a task to course 1 (expect 201 + Location: /api/tasks/9, status TODO, owner kenny)
+POST http://localhost:8080/api/courses/1/tasks
+Content-Type: application/json
+Authorization: Bearer {{kennyToken}}
+
+{ "title": "Lab G: Docker", "description": "compose file", "priority": "HIGH", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
+
+### 30. C1 Rule A: sura already has 3 open tasks in course 1 (expect 409, "you already have 3 open tasks in course 1 (limit 3)")
+POST http://localhost:8080/api/courses/1/tasks
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Lab G: Docker", "priority": "HIGH", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
+
+### 31. C1 Rule B: start after due (expect 400, "startDate must be on or before dueDate")
+POST http://localhost:8080/api/courses/1/tasks
+Content-Type: application/json
+Authorization: Bearer {{kennyToken}}
+
+{ "title": "Backwards", "priority": "LOW", "startDate": "2026-12-08", "dueDate": "2026-12-01" }
+
+### 32. C1 Invalid fields (expect 400, fieldErrors for title and dueDate)
+POST http://localhost:8080/api/courses/1/tasks
+Content-Type: application/json
+Authorization: Bearer {{kennyToken}}
+
+{ "title": "", "priority": "LOW", "startDate": "2026-12-01" }
+
+### 33. C1 No token (expect 401, "login required")
+POST http://localhost:8080/api/courses/1/tasks
+Content-Type: application/json
+
+{ "title": "Anonymous", "priority": "LOW", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
+
+### 34. C1 Missing course (expect 404, "course 99 not found")
+POST http://localhost:8080/api/courses/99/tasks
+Content-Type: application/json
+Authorization: Bearer {{kennyToken}}
+
+{ "title": "Nowhere", "priority": "LOW", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
+
+### 35. C3 sura's tasks (expect 200, 5 tasks, all ownerUsername sura)
+GET http://localhost:8080/api/tasks/mine
+Authorization: Bearer {{suraToken}}
+
+### 36. C3 No token (expect 401, "login required")
+GET http://localhost:8080/api/tasks/mine
+
+### 37. C4 sura reads own task 1 (expect 200)
+GET http://localhost:8080/api/tasks/1
+Authorization: Bearer {{suraToken}}
+
+### 38. C4 Rule C: sura reads kenny's task (expect 403, "task 6 belongs to another user")
+GET http://localhost:8080/api/tasks/6
+Authorization: Bearer {{suraToken}}
+
+### 39. C4 Admin reads kenny's task (expect 200)
+GET http://localhost:8080/api/tasks/6
+Authorization: Bearer {{adminToken}}
+
+### 40. C4 Missing task (expect 404, "task 99 not found")
+GET http://localhost:8080/api/tasks/99
+Authorization: Bearer {{suraToken}}
+
+### 41. C5 sura moves own task 1 to DOING (expect 200, status DOING)
+PUT http://localhost:8080/api/tasks/1
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Lab F: JWT login", "description": "Finish the login endpoint and the token check", "priority": "HIGH", "status": "DOING", "startDate": "2026-11-20", "dueDate": "2026-11-27" }
+
+### 42. C5 Rule C: sura changes kenny's task (expect 403, "task 6 belongs to another user")
+PUT http://localhost:8080/api/tasks/6
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Lab E: security", "priority": "MEDIUM", "status": "DONE", "startDate": "2026-11-18", "dueDate": "2026-11-25" }
+
+### 43. C5 Rule C: owner only, so the admin is refused too (expect 403, "task 1 belongs to another user")
+PUT http://localhost:8080/api/tasks/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "title": "Changed by admin", "priority": "LOW", "status": "DONE", "startDate": "2026-11-20", "dueDate": "2026-11-27" }
+
+### 44. C5 Rule A: sura reopens DONE task 4 while already at 3 open (expect 409, "you already have 3 open tasks in course 1 (limit 3)")
+PUT http://localhost:8080/api/tasks/4
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Midterm revision", "description": "Weeks 1 to 7", "priority": "LOW", "status": "TODO", "startDate": "2026-10-12", "dueDate": "2026-10-20" }
+
+### 45. C5 Rule B: start after due (expect 400, "startDate must be on or before dueDate")
+PUT http://localhost:8080/api/tasks/1
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Lab F: JWT login", "priority": "HIGH", "status": "DOING", "startDate": "2026-11-30", "dueDate": "2026-11-27" }
+
+### 46. C5 Missing task (expect 404, "task 99 not found")
+PUT http://localhost:8080/api/tasks/99
+Content-Type: application/json
+Authorization: Bearer {{suraToken}}
+
+{ "title": "Nothing", "priority": "LOW", "status": "TODO", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
+
+### 47. C6 Rule C: sura deletes kenny's task (expect 403, "task 6 belongs to another user")
+DELETE http://localhost:8080/api/tasks/6
+Authorization: Bearer {{suraToken}}
+
+### 48. C6 kenny deletes own task 9 from request 29 (expect 204)
+DELETE http://localhost:8080/api/tasks/9
+Authorization: Bearer {{kennyToken}}
+
+### 49. C6 Admin deletes kenny's task (expect 204)
+DELETE http://localhost:8080/api/tasks/8
+Authorization: Bearer {{adminToken}}
+
+### 50. C6 No token (expect 401, "login required")
+DELETE http://localhost:8080/api/tasks/7
+
+### 51. C6 Missing task (expect 404, "task 99 not found")
+DELETE http://localhost:8080/api/tasks/99
+Authorization: Bearer {{suraToken}}
+
+### 52. Broken token (expect 401, "token is invalid or expired")
+GET http://localhost:8080/api/tasks/mine
+Authorization: Bearer abc.def.ghi
+
+### 53. Task id that is not a number (expect 400, "'id' has the wrong type")
+GET http://localhost:8080/api/tasks/abc
+Authorization: Bearer {{suraToken}}
+
+### 54. Unknown priority (expect 400, "request body is missing or is not valid JSON")
+POST http://localhost:8080/api/courses/2/tasks
+Content-Type: application/json
+Authorization: Bearer {{kennyToken}}
+
+{ "title": "Too urgent", "priority": "URGENT", "startDate": "2026-12-01", "dueDate": "2026-12-08" }
