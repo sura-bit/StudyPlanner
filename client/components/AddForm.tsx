@@ -108,12 +108,7 @@ export default function AddForm({ onSubmitForm, initialData, editMode, courseNam
     setSubmitting(true);
     try {
       await onSubmitForm({ courseId, title, description, startDate, dueDate, priority });
-      setAlert({
-        show: true,
-        message: editMode ? 'Task updated successfully!' : 'Task added successfully!',
-        severity: 'success',
-      });
-      setTimeout(() => closeForm(), 1000);
+      closeForm();
     } catch (error) {
       // e.g. 409 "you already have 3 open tasks in course 1 (limit 3)"
       setAlert({ show: true, message: errorMessage(error), severity: 'error' });

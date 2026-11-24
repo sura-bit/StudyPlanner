@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   ApiError,
   Course,
+  CourseFormData,
   TaskFormData,
   TaskStatus,
   TaskType,
@@ -82,11 +83,36 @@ export async function signup(username: string, password: string): Promise<void> 
   await api.post("/api/auth/signup", { username, password });
 }
 
-// ---- courses (P2) --------------------------------------------------------
+// ---- courses (P1, P2, P4, P5) ---------------------------------------------
 
 export async function getCourses(): Promise<Course[]> {
   const { data } = await api.get<Course[]>("/api/courses");
   return data;
+}
+
+const courseBody = (form: CourseFormData) => ({
+  code: form.code.trim().toUpperCase(),
+  name: form.name.trim(),
+  taskLimit: form.taskLimit,
+  instructor: form.instructor.trim(),
+  credits: form.credits,
+});
+
+// P1 (admin)
+export async function createCourse(form: CourseFormData): Promise<Course> {
+  const { data } = await api.post<Course>("/api/courses", courseBody(form));
+  return data;
+}
+
+// P4 (admin)
+export async function updateCourse(id: number, form: CourseFormData): Promise<Course> {
+  const { data } = await api.put<Course>(`/api/courses/${id}`, courseBody(form));
+  return data;
+}
+
+// P5 (admin); 409 when the course still has tasks
+export async function deleteCourse(id: number): Promise<void> {
+  await api.delete(`/api/courses/${id}`);
 }
 
 // ---- tasks (C1, C3, C5, C6) ----------------------------------------------

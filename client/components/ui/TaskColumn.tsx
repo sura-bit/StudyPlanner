@@ -2,7 +2,7 @@ import { STATUS_LABELS, TaskColumnProps } from "@/lib/types";
 import { useDrop } from "react-dnd";
 import TaskCard from "./TaskCard";
 
-const TaskColumn = ({ status, tasks, moveTask, colors, handleDelete, onPress}: TaskColumnProps) => {
+const TaskColumn = ({ status, tasks, courses, moveTask, colors, handleDelete, onPress }: TaskColumnProps) => {
   const [, drop] = useDrop({
     accept: 'task',
     drop: (item: { id: number }) => {
@@ -27,7 +27,7 @@ const TaskColumn = ({ status, tasks, moveTask, colors, handleDelete, onPress}: T
       </div>
 
       {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} handleDelete={handleDelete} onPress={onPress}/>
+        <TaskCard key={task.id} task={task} course={courses[task.courseId]} handleDelete={handleDelete} onPress={onPress}/>
       ))}
     </div>
   );

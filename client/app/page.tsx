@@ -5,12 +5,13 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Alert, Snackbar } from '@mui/material';
 import AddButton from '@/components/AddButton';
-import { STATUSES, TaskFormData, TaskStatus, TaskType } from '@/lib/types';
+import { Course, STATUSES, TaskFormData, TaskStatus, TaskType } from '@/lib/types';
 import TaskColumn from '@/components/ui/TaskColumn';
 import {
   createTask,
   deleteTask,
   errorMessage,
+  getCourses,
   getMyTasks,
   updateTask,
   updateTaskStatus,
@@ -20,11 +21,16 @@ const colors = ['#0088FE', '#FFBB28', '#00C49F'];
 
 const Home = () => {
   const [tasks, setTasks] = useState<TaskType[]>([]);
+  const [courses, setCourses] = useState<Record<number, Course>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getMyTasks()
       .then(setTasks)
+      .catch((e) => setError(errorMessage(e)));
+    // Course code and instructor for the cards (P2 is public).
+    getCourses()
+      .then((list) => setCourses(Object.fromEntries(list.map((c) => [c.id, c]))))
       .catch((e) => setError(errorMessage(e)));
   }, []);
 
@@ -75,6 +81,7 @@ const Home = () => {
               key={status}
               status={status}
               tasks={tasks.filter((task) => task.status === status)}
+              courses={courses}
               moveTask={moveTask}
               colors={colors[index]}
               handleDelete={handleDeleteTask}

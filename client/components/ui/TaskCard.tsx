@@ -1,14 +1,51 @@
-import { PRIORITY_LABELS, TaskCardProps, TaskFormData } from '@/lib/types';
+import { Priority, PRIORITY_LABELS, TaskCardProps, TaskFormData, TaskType } from '@/lib/types';
 import { formatDate, isOverdue, parseDate } from '@/lib/utils';
-import { Ellipsis, Flag } from 'lucide-react';
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  GraduationCap,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
+import { differenceInCalendarDays, startOfToday } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { motion, AnimatePresence } from 'framer-motion';
 import AddForm from '../AddForm';
 
-const TaskCard = ({ task, handleDelete, onPress }: TaskCardProps) => {
+const PRIORITY_STYLES: Record<Priority, { pill: string }> = {
+  HIGH: { pill: 'bg-red-400 text-white' },
+  MEDIUM: { pill: 'bg-amber-300 text-black' },
+  LOW: { pill: 'bg-emerald-400 text-black' },
+};
+
+// "Due today", "Due in 3 days", "2 days overdue", or "Done".
+function dueLabel(task: TaskType): { text: string; className: string; icon: 'clock' | 'done' } {
+  if (task.status === 'DONE') {
+    return { text: 'Done', className: 'text-emerald-300 bg-emerald-400/10', icon: 'done' };
+  }
+  const days = differenceInCalendarDays(parseDate(task.dueDate), startOfToday());
+  if (days < 0) {
+    const n = -days;
+    return {
+      text: `${n} day${n === 1 ? '' : 's'} overdue`,
+      className: 'text-red-300 bg-red-400/15',
+      icon: 'clock',
+    };
+  }
+  if (days === 0) return { text: 'Due today', className: 'text-amber-200 bg-amber-300/15', icon: 'clock' };
+  if (days <= 3) {
+    return {
+      text: `Due in ${days} day${days === 1 ? '' : 's'}`,
+      className: 'text-amber-200 bg-amber-300/10',
+      icon: 'clock',
+    };
+  }
+  return { text: `Due in ${days} days`, className: 'text-white/60 bg-white/5', icon: 'clock' };
+}
+
+const TaskCard = ({ task, course, handleDelete, onPress }: TaskCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
   const [{ isDragging }, drag] = useDrag({
     type: 'task',
     item: { id: task.id },
@@ -23,22 +60,9 @@ const TaskCard = ({ task, handleDelete, onPress }: TaskCardProps) => {
     }
   }, [ref, drag]);
 
-  const deleteTask = () => {
-    handleDelete(task.id);
-  };
-
-  const [showMenu, setShowMenu] = useState(false);
   const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropRef.current && !dropRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const initialData: TaskFormData = {
     courseId: task.courseId,
@@ -51,90 +75,147 @@ const TaskCard = ({ task, handleDelete, onPress }: TaskCardProps) => {
 
   const handleFormUpdate = (formData: TaskFormData) => onPress(task.id, formData);
 
-  if (showForm) {
-    return (
-      <>
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" />
+  const onConfirmDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await handleDelete(task.id);
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
-        <AddForm
-          initialData={initialData}
-          editMode={true}
-          courseName={task.courseName}
-          onSubmitForm={handleFormUpdate}
-          closeForm={() => setShowForm(false)}
-        />
-      </>
-    );
-  }
+  const done = task.status === 'DONE';
+  const overdue = isOverdue(task);
+  const priority = PRIORITY_STYLES[task.priority];
+  const due = dueLabel(task);
+  const courseCode = course?.code ?? task.courseName;
 
   return (
-    <div
-      className={`my-3 p-5 bg-neutral-800 text-white rounded-2xl border border-neutral-700 ${
-        isDragging ? 'opacity-50' : 'opacity-100'
-      }`} ref={ref}>
-      <div className="flex justify-between">
-        <h5 className="text-[15px] font-bold line-clamp-2 w-[80%]">
+    <>
+      <div
+        ref={ref}
+        className={`group relative my-3 cursor-grab overflow-hidden rounded-2xl border bg-gradient-to-b from-neutral-800 to-[#1f1f1f] p-5 text-white transition-all duration-200 hover:-translate-y-0.5 active:cursor-grabbing ${
+          overdue ? 'border-red-400/40' : 'border-neutral-700/80'
+        } ${isDragging ? 'opacity-40 rotate-1' : 'opacity-100'}`}>
+        <div className="flex items-start justify-between gap-3">
+          <span className="inline-block rounded-md border border-neutral-600 px-2 py-0.5 font-mono text-xs tracking-wide text-blue-primary">
+            {courseCode}
+          </span>
+
+          <div className="flex shrink-0 gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label={`Edit ${task.title}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowForm(true);
+              }}
+              className="rounded-md p-2 text-neutral-300 hover:bg-neutral-700 hover:text-white">
+              <Pencil className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              aria-label={`Delete ${task.title}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDelete(true);
+              }}
+              className="rounded-md p-2 text-neutral-300 hover:bg-red-950/60 hover:text-red-300">
+              <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          </div>
+        </div>
+
+        <h5
+          className={`mt-3 text-[15px] font-semibold leading-snug line-clamp-2 ${
+            done ? 'text-white/50 line-through decoration-white/30' : 'text-white'
+          }`}>
           {task.title}
         </h5>
-        <div
-          className="cursor-pointer relative"
-          onClick={() => setShowMenu((prev) => !prev)}
-          ref={dropRef}>
-          <Ellipsis />
-          <AnimatePresence>
-            {showMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute right-0 top-6 z-10 w-28 rounded-md py-2 bg-neutral-700/60 backdrop-blur-md border border-white/20 shadow-lg">
-                <button
-                  className="block w-full text-left px-4 py-2 rounded-md text-sm hover:bg-neutral-800 hover:text-blue-400 transition-colors duration-200"
-                  onClick={() => setShowForm(true)}>
-                  Edit
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 rounded-md text-sm hover:bg-neutral-800 hover:text-red-400 transition-colors duration-200"
-                  onClick={deleteTask}>
-                  Delete
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-      <p className="mt-2 text-xs text-blue-300">{task.courseName}</p>
-      <div className="flex flex-wrap items-center gap-x-2 text-sm text-gray-300 my-4">
-        <Flag color="#0275ff" className="mr-2.5" size={18} />
-        <p className="text-sm text-gray-300">{formatDate(task.startDate)}</p>
-        <span>-</span>
-        <p className="text-sm text-gray-300">{formatDate(task.dueDate)}</p>
-        {isOverdue(task) && (
-          <span className="ml-1 rounded-full bg-[#F7374F] px-2 text-xs text-white">Overdue</span>
-        )}
-      </div>
-      <div className="my-5">
-        {task.description && (
-          <p className="text-[12px] text-gray-300 line-clamp-4">
-            {task.description}
+
+        <p className="mt-1 truncate text-xs text-white/50">{task.courseName}</p>
+        {course?.instructor && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-white/40">
+            <GraduationCap size={13} className="shrink-0" />
+            <span className="truncate">{course.instructor}</span>
           </p>
         )}
+
+        {task.description && (
+          <p className="mt-3 text-[12px] leading-relaxed text-white/60 line-clamp-3">{task.description}</p>
+        )}
+
+        <p className="mt-4 flex items-center gap-1.5 text-[11px] text-white/45">
+          <CalendarDays size={12} />
+          {formatDate(task.startDate)} → {formatDate(task.dueDate)}
+        </p>
+
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ${due.className}`}>
+            {due.icon === 'done' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+            {due.text}
+          </span>
+
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ${priority.pill}`}>
+            {PRIORITY_LABELS[task.priority]}
+          </span>
+        </div>
       </div>
 
-      <div
-        className={`text-sm text-black py-2 px-5 w-fit rounded-2xl ${
-          task.priority === 'HIGH'
-            ? 'bg-red-200'
-            : task.priority === 'MEDIUM'
-            ? 'bg-yellow-200'
-            : 'bg-green-200'
-        }`}>
-        {PRIORITY_LABELS[task.priority]}
-      </div>
-    </div>
+      {showForm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <AddForm
+            initialData={initialData}
+            editMode={true}
+            courseName={course ? `${course.code} · ${course.name}` : task.courseName}
+            onSubmitForm={handleFormUpdate}
+            closeForm={() => setShowForm(false)}
+          />
+        </>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-700 bg-neutral-800 p-6 text-white shadow-xl">
+            <h2 className="text-lg font-semibold">Delete task?</h2>
+            <p className="mt-2 text-sm text-neutral-400">
+              This removes <span className="text-neutral-200">{task.title}</span>
+              {course?.code ? (
+                <>
+                  {' '}
+                  in{' '}
+                  <span className="inline-block rounded-md border border-neutral-600 px-1.5 py-0.5 font-mono text-[11px] tracking-wide text-blue-primary">
+                    {course.code}
+                  </span>
+                </>
+              ) : null}
+              .
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-lg px-4 py-2.5 text-sm text-neutral-300 hover:text-white">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={onConfirmDelete}
+                className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold hover:bg-red-500 disabled:opacity-50">
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
 export default TaskCard;
-

@@ -22,7 +22,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.15.0",
-    "lucide-react": "^0.511.0",
+    "lucide-react": "^1.79.0",
     "motion": "^12.14.0",
     "next": "15.3.2",
     "numeral": "^2.0.6",

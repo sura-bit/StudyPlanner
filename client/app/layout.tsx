@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Queuely",
+  title: "Study Planner",
   description: "Study Planner: plan your course tasks",
 };
 

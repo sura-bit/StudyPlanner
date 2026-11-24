@@ -2,9 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import logo from '@/public/images/logo.png';
-import { errorMessage, login, signup } from '@/lib/api';
+import { currentUser, errorMessage, login, signup } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,7 +25,7 @@ export default function LoginPage() {
         setMode('login');
       } else {
         await login(username, password);
-        router.replace('/');
+        router.replace(currentUser()?.role === 'ADMIN' ? '/courses' : '/');
       }
     } catch (err) {
       setError(errorMessage(err));
@@ -44,9 +42,8 @@ export default function LoginPage() {
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-2xl border border-neutral-700 bg-neutral-800 p-8 text-white">
-        <div className="mb-6 flex items-center gap-2">
-          <Image src={logo} className="h-6 w-6" alt="Logo" />
-          <span className="font-logo text-2xl">queuely</span>
+        <div className="mb-6">
+          <span className="font-logo text-2xl">Study Planner</span>
         </div>
         <h1 className="mb-6 text-lg font-semibold">{mode === 'login' ? 'Log in' : 'Create an account'}</h1>
 

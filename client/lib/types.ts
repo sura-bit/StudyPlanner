@@ -7,8 +7,8 @@ export const STATUSES: TaskStatus[] = ['TODO', 'DOING', 'DONE'];
 export const PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH'];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  TODO: 'To Do',
-  DOING: 'In Progress',
+  TODO: 'Todo',
+  DOING: 'Doing',
   DONE: 'Done',
 };
 
@@ -36,6 +36,15 @@ export interface TaskType {
 // CourseResponse
 export interface Course {
   id: number;
+  code: string;
+  name: string;
+  taskLimit: number;
+  instructor: string;
+  credits: number;
+}
+
+// CourseRequest body for P1 / P4
+export interface CourseFormData {
   code: string;
   name: string;
   taskLimit: number;
@@ -73,6 +82,7 @@ export type TaskColumnProps = {
   status: TaskStatus;
   tasks: TaskType[];
   colors: string;
+  courses: Record<number, Course>;
   moveTask: (taskId: number, toStatus: TaskStatus) => void;
   handleDelete: (taskId: number) => void;
   onPress: (taskId: number, formData: TaskFormData) => Promise<void>;
@@ -80,6 +90,7 @@ export type TaskColumnProps = {
 
 export type TaskCardProps = {
   task: TaskType;
+  course?: Course; // code and instructor; TaskResponse only carries courseName
   handleDelete: (taskId: number) => void;
   onPress: (taskId: number, formData: TaskFormData) => Promise<void>;
 };
