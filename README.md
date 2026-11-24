@@ -235,9 +235,35 @@ Every failure, including 401 and 403 from the security filters, answers with the
 
 ## Client
 
-*(To be added with the client: a Next.js app in `client/` that logs in and keeps the token, lists the
-courses (P2), adds a task (C1), shows my tasks (C3), and shows the `ApiError` message when the server
-refuses. It runs on http://localhost:3000, which `CORS_ORIGINS` allows.)*
+A Next.js app in `client/`. It talks to the API at `NEXT_PUBLIC_API_URL` (default
+`http://localhost:8080`) and runs on http://localhost:3000, which `CORS_ORIGINS` allows.
+
+**Start** (API must already be running, locally or with Docker):
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. Sample logins: `sura` / `sura1234` (student), `admin` / `admin1234` (admin).
+
+**What it covers (R10)**
+
+| # | Requirement | Where |
+|---|---|---|
+| 1 | Log in and keep the token | `/login` → JWT in `localStorage` (`accessToken`) |
+| 2 | Show the list of parents (P2) | courses loaded for task forms / admin catalogue |
+| 3 | Create a child (C1) | Dashboard **New Task** |
+| 4 | Show the logged-in user's children (C3) | Dashboard board, Analytics, Table |
+| 5 | Show `ApiError.message` on refuse | snackbars / form alerts (400, 401, 403, 409, …) |
+
+**Screens**
+
+- **Student:** Dashboard (Todo / Doing / Done board), Analytics, Table. Sidebar logout clears the token.
+- **Admin:** redirected to `/courses` to create, edit and delete courses (P1, P4, P5). Student board routes are hidden.
+
+On a 401 the client clears the token and returns to `/login`.
 
 ## AI use
 
